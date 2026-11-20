@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Чат с ИИ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f6;--panel:#f8f9fc;--ink:#151a24;--mute:#6b7487;--line:#d9deea;--acc:#2f5bff;--acc-ink:#fff;--user:#2f5bff;--code:#e4e8f2;--err:#c0352b;
+ --ui:'Onest',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;--logo:'Unbounded','Onest',system-ui,sans-serif;color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10141c;--panel:#171c27;--ink:#e8ecf5;--mute:#8d96aa;--line:#262d3c;--acc:#7f9bff;--acc-ink:#0c1020;--user:#26345f;--code:#0c1018;--err:#ff8a80;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10141c;--panel:#171c27;--ink:#e8ecf5;--mute:#8d96aa;--line:#262d3c;--acc:#7f9bff;--acc-ink:#0c1020;--user:#26345f;--code:#0c1018;--err:#ff8a80;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--ui);display:flex;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+
+aside{width:320px;flex:none;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:calc(20px + env(safe-area-inset-top,0px)) 20px calc(20px + env(safe-area-inset-bottom,0px));overflow-y:auto;transition:transform .25s}
+.logo{font:600 20px var(--logo);letter-spacing:-.02em;margin:0 0 4px}
+.sub{color:var(--mute);font-size:14px;margin:0 0 20px}
+label{display:block;font-size:14px;font-weight:500;margin:16px 0 6px}
+input[type=text],input[type=password],select,textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+textarea{resize:vertical;min-height:84px}
+.hint{font-size:13px;color:var(--mute);margin:6px 0 0}
+.hint a{color:var(--acc)}
+.row{display:flex;justify-content:space-between;align-items:center}
+.row output{font-variant-numeric:tabular-nums;color:var(--mute);font-size:14px}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.keybox{position:relative}
+.keybox button{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--mute);padding:6px 8px;cursor:pointer;font-size:13px}
+.free{display:inline-block;font-size:12px;font-weight:600;background:var(--acc);color:var(--acc-ink);border-radius:20px;padding:1px 9px;margin-left:6px;vertical-align:1px}
+.ghost{margin-top:auto;padding-top:20px}
+.btn{background:none;border:1px solid var(--line);border-radius:10px;padding:9px 14px;cursor:pointer;width:100%}
+.btn:hover{border-color:var(--acc)}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px;margin:14px 0 0;cursor:pointer}
+.chk input{width:auto;accent-color:var(--acc)}
+hr.sep{border:0;border-top:1px solid var(--line);margin:18px 0}
+
+.chatsHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.chatsHead h2{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--mute);margin:0;font-weight:600}
+.newchat{background:var(--acc);color:var(--acc-ink);border:0;border-radius:10px;padding:6px 11px;font-size:13px;font-weight:600;cursor:pointer}
+.chats{display:flex;flex-direction:column;gap:3px;max-height:220px;overflow-y:auto;margin-bottom:6px}
+.chatItem{display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:9px;cursor:pointer;font-size:14px}
+.chatItem:hover{background:var(--bg)}
+.chatItem.active{background:var(--bg);font-weight:600}
+.chatItem span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chatItem button{background:none;border:0;color:var(--mute);cursor:pointer;padding:2px 6px;font-size:15px;line-height:1;flex:none}
+.chatItem button:hover{color:var(--err)}
+
+main{flex:1;min-width:0;display:flex;flex-direction:column;height:100%}
+header{display:none;align-items:center;gap:12px;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;border-bottom:1px solid var(--line);background:var(--panel)}
+header .logo{margin:0;font-size:17px}
+.menu{background:none;border:1px solid var(--line);border-radius:10px;padding:6px 12px;cursor:pointer}
+#log{flex:1;overflow-y:auto;padding:28px 20px 12px;scroll-behavior:smooth}
+.wrap{max-width:720px;margin:0 auto}
+.msg{white-space:pre-wrap;word-wrap:break-word;margin:0 0 20px;max-width:100%}
+.msg.user{background:var(--user);color:#fff;border-radius:18px 18px 4px 18px;padding:10px 16px;margin-left:auto;width:fit-content;max-width:85%}
+:root[data-theme="dark"] .msg.user{color:var(--ink)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .msg.user{color:var(--ink)}}
+.msg.ai{padding-left:16px;border-left:3px solid var(--acc)}
+.msg.err{border-left-color:var(--err);color:var(--err)}
+.msg code{background:var(--code);border-radius:5px;padding:1px 5px;font-size:.9em;font-family:ui-monospace,Menlo,Consolas,monospace}
+.msg pre{background:var(--code);border-radius:10px;padding:12px 14px;overflow-x:auto;margin:8px 0;white-space:pre}
+.msg pre code{background:none;padding:0}
+.switching{color:var(--mute);font-style:italic}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.chip{display:flex;align-items:center;gap:5px;background:rgba(0,0,0,.12);border-radius:8px;padding:3px 8px 3px 3px;font-size:12px;max-width:180px}
+:root[data-theme="dark"] .msg.user .chip{background:rgba(255,255,255,.15)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .msg.user .chip{background:rgba(255,255,255,.15)}}
+.chip img{width:22px;height:22px;border-radius:5px;object-fit:cover;flex:none}
+.chip .fi{width:22px;height:22px;border-radius:5px;background:rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;font-size:12px;flex:none}
+.chip b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:400}
+.empty{max-width:720px;margin:12vh auto 0;color:var(--mute)}
+.empty h2{font:600 28px/1.15 var(--logo);letter-spacing:-.03em;color:var(--ink);margin:0 0 12px}
+.empty p{margin:0 0 8px}
+.dots span{display:inline-block;width:7px;height:7px;margin-right:4px;border-radius:50%;background:var(--acc);animation:b 1s infinite}
+.dots span:nth-child(2){animation-delay:.15s}.dots span:nth-child(3){animation-delay:.3s}
+@keyframes b{0%,60%,100%{opacity:.25}30%{opacity:1}}
+form{padding:8px 20px calc(18px + env(safe-area-inset-bottom,0px))}
+.attachPreview{max-width:720px;margin:0 auto 8px;display:flex;flex-wrap:wrap;gap:8px}
+.ap{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px 6px 4px 4px;font-size:12px;max-width:200px}
+.ap img{width:30px;height:30px;border-radius:6px;object-fit:cover;flex:none}
+.ap .fi{width:30px;height:30px;border-radius:6px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:14px;flex:none}
+.ap b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:400;max-width:110px}
+.ap button{background:none;border:0;color:var(--mute);cursor:pointer;font-size:15px;padding:2px 4px}
+.ap button:hover{color:var(--err)}
+.bar{max-width:720px;margin:0 auto;display:flex;gap:8px;align-items:flex-end;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:8px 8px 8px 10px}
+.bar:focus-within{border-color:var(--acc)}
+.bar textarea{border:0;background:none;padding:8px 0;min-height:0;max-height:180px;resize:none;outline:0}
+.clip{background:none;border:0;color:var(--mute);cursor:pointer;padding:9px 7px;flex:none;border-radius:10px;font-size:18px;line-height:1}
+.clip:hover{color:var(--acc);background:var(--bg)}
+.send{background:var(--acc);color:var(--acc-ink);border:0;border-radius:11px;padding:9px 16px;font-weight:600;cursor:pointer;flex:none}
+.send:disabled{opacity:.5;cursor:default}
+#scrim{display:none}
+@media(max-width:820px){
+ aside{position:fixed;inset:0 auto 0 0;z-index:5;width:min(340px,88vw);transform:translateX(-100%)}
+ body.open aside{transform:none}
+ body.open #scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:4}
+ header{display:flex}
+ #log{padding-top:20px}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div id="scrim"></div>
+<aside>
+  <h1 class="logo">Чат с ИИ</h1>
+  <p class="sub">Ключи и файлы хранятся только в вашем браузере.</p>
+
+  <div class="chatsHead"><h2>Чаты</h2><button class="newchat" id="newchat" type="button">+ Новый</button></div>
+  <div class="chats" id="chats"></div>
+  <hr class="sep">
+
+  <label for="prov">Сервис</label>
+  <select id="prov"></select>
+  <p class="hint" id="provHint"></p>
+
+  <label for="key">API-ключ</label>
+  <div class="keybox">
+    <input type="password" id="key" autocomplete="off" spellcheck="false" placeholder="Вставьте ключ">
+    <button type="button" id="eye">Показать</button>
+  </div>
+
+  <div id="urlBox" hidden>
+    <label for="url">Адрес API</label>
+    <input type="text" id="url" spellcheck="false">
+    <p class="hint">Любой OpenAI-совместимый адрес, например Ollama или LM Studio.</p>
+  </div>
+
+  <label for="model">Модель</label>
+  <input type="text" id="model" spellcheck="false">
+  <select id="mpick" hidden style="margin-top:8px"></select>
+  <button class="btn" id="mload" type="button" style="margin-top:8px">Показать доступные модели</button>
+  <p class="hint" id="mhint"></p>
+
+  <label class="chk" for="fallback"><input type="checkbox" id="fallback">Автопереключение на другой сервис, если закончился лимит (используются ключи, сохранённые выше)</label>
+
+  <label for="sys">Системная инструкция</label>
+  <textarea id="sys" placeholder="Например: отвечай кратко и по-русски"></textarea>
+
+  <label class="row" for="temp" style="margin-bottom:0">Креативность <output id="tempOut"></output></label>
+  <input type="range" id="temp" min="0" max="1.5" step="0.1">
+
+  <label for="theme">Тема</label>
+  <select id="theme"><option value="auto">Как в системе</option><option value="light">Светлая</option><option value="dark">Тёмная</option></select>
+
+  <div class="ghost"><button class="btn" id="clear" type="button">Удалить этот чат</button></div>
+</aside>
+
+<main>
+  <header><button class="menu" id="menu" type="button">Настройки</button><span class="logo">Чат с ИИ</span></header>
+  <div id="log"><div class="wrap" id="msgs"></div></div>
+  <div class="attachPreview" id="attachPreview"></div>
+  <form id="f">
+    <div class="bar">
+      <button class="clip" id="clip" type="button" title="Прикрепить файл">📎</button>
+      <input type="file" id="fileInput" multiple hidden accept="image/*,.pdf,.txt,.md,.csv,.json,.js,.ts,.py,.html,.css,.xml,.log">
+      <textarea id="in" rows="1" placeholder="Напишите сообщение" aria-label="Сообщение"></textarea>
+      <button class="send" id="go" type="submit">Отправить</button>
+    </div>
+  </form>
+</main>
+
+<script>
+const PROV={
+ openrouter:{n:'OpenRouter',free:1,url:'https://openrouter.ai/api/v1/chat/completions',m:'meta-llama/llama-3.3-70b-instruct:free',get:'https://openrouter.ai/keys',h:'Есть бесплатные модели — у них в названии «:free».'},
+ groq:{n:'Groq',free:1,url:'https://api.groq.com/openai/v1/chat/completions',m:'llama-3.3-70b-versatile',get:'https://console.groq.com/keys',h:'Бесплатный тариф с лимитами, очень быстрый.'},
+ gemini:{n:'Google Gemini',free:1,url:'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',m:'gemini-flash-latest',get:'https://aistudio.google.com/apikey',h:'Бесплатный тариф с лимитами в Google AI Studio.'},
+ openai:{n:'OpenAI',url:'https://api.openai.com/v1/chat/completions',m:'gpt-5.1',get:'https://platform.openai.com/api-keys',h:'Платный ключ. Поддерживает изображения.'},
+ anthropic:{n:'Anthropic (Claude)',url:'https://api.anthropic.com/v1/messages',m:'claude-sonnet-5-5',get:'https://console.anthropic.com/settings/keys',h:'Платный ключ. Лучше всех работает с файлами и PDF.'},
+ custom:{n:'Свой сервер / Ollama',url:'http://localhost:11434/v1/chat/completions',m:'llama3.2',h:'Ключ не нужен, если сервер работает локально.'}
+};
+const FALLBACK_ORDER=['openrouter','groq','gemini','anthropic','openai'];
+const $=id=>document.getElementById(id);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+let S={provider:'openrouter',keys:{groq:'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'},models:{},customUrl:PROV.custom.url,sys:'',temp:0.7,theme:'auto',fallback:true,chats:{},order:[],current:null};
+try{Object.assign(S,JSON.parse(localStorage.getItem('aichat')||'{}'))}catch(e){}
+// migrate old single-history format
+if(S.hist&&S.hist.length&&!S.order.length){const id=uid();S.chats[id]={title:'Новый чат',hist:S.hist};S.order=[id];S.current=id;delete S.hist}
+if(!S.order.length){const id=uid();S.chats[id]={title:'Новый чат',hist:[]};S.order=[id];S.current=id}
+if(!S.chats[S.current])S.current=S.order[0];
+
+function save(){try{localStorage.setItem('aichat',JSON.stringify(S));return true}catch(e){return false}}
+function curChat(){return S.chats[S.current]}
+function titleFor(id){const c=S.chats[id];if(c.title&&c.title!=='Новый чат')return c.title;const u=c.hist.find(m=>m.role==='user');return u?u.content.slice(0,40)||'Вложение':'Новый чат'}
+
+$('prov').innerHTML=Object.entries(PROV).map(([k,p])=>`<option value="${k}">${p.n}${p.free?' — бесплатно':''}</option>`).join('');
+
+function applyTheme(){const r=document.documentElement;S.theme==='auto'?r.removeAttribute('data-theme'):r.setAttribute('data-theme',S.theme)}
+function fill(){
+ const p=PROV[S.provider];
+ $('prov').value=S.provider;
+ $('provHint').innerHTML=p.h+(p.get?` <a href="${p.get}" target="_blank" rel="noopener">Получить ключ</a>`:'');
+ $('key').value=S.keys[S.provider]||'';$('mpick').hidden=true;$('mhint').textContent='';
+ $('model').value=S.models[S.provider]||p.m;
+ $('urlBox').hidden=S.provider!=='custom';
+ $('url').value=S.customUrl;
+ $('sys').value=S.sys;$('temp').value=S.temp;$('tempOut').textContent=S.temp;$('theme').value=S.theme;
+ $('fallback').checked=!!S.fallback;
+ applyTheme();
+}
+$('prov').onchange=e=>{S.provider=e.target.value;save();fill()};
+$('key').oninput=e=>{S.keys[S.provider]=e.target.value.trim();save()};
+$('model').oninput=e=>{S.models[S.provider]=e.target.value.trim();save()};
+$('url').oninput=e=>{S.customUrl=e.target.value.trim();save()};
+$('sys').oninput=e=>{S.sys=e.target.value;save()};
+$('temp').oninput=e=>{S.temp=+e.target.value;$('tempOut').textContent=S.temp;save()};
+$('theme').onchange=e=>{S.theme=e.target.value;applyTheme();save()};
+$('fallback').onchange=e=>{S.fallback=e.target.checked;save()};
+$('eye').onclick=()=>{const k=$('key');const h=k.type==='password';k.type=h?'text':'password';$('eye').textContent=h?'Скрыть':'Показать'};
+$('menu').onclick=()=>document.body.classList.add('open');
+$('scrim').onclick=()=>document.body.classList.remove('open');
+$('clear').onclick=()=>{
+ if(!confirm('Удалить этот чат?'))return;
+ delete S.chats[S.current];S.order=S.order.filter(x=>x!==S.current);
+ if(!S.order.length){const id=uid();S.chats[id]={title:'Новый чат',hist:[]};S.order=[id]}
+ S.current=S.order[0];save();renderChats();render();document.body.classList.remove('open');
+};
+
+// ---- chats sidebar ----
+function renderChats(){
+ $('chats').innerHTML=S.order.map(id=>{
+  const active=id===S.current?' active':'';
+  return `<div class="chatItem${active}" data-id="${id}"><span>${esc(titleFor(id))}</span><button data-del="${id}" title="Удалить">×</button></div>`;
+ }).join('');
+ $('chats').querySelectorAll('.chatItem').forEach(el=>{
+  el.onclick=e=>{
+   if(e.target.closest('button'))return;
+   S.current=el.dataset.id;save();renderChats();render();clearAttachments();
+   document.body.classList.remove('open');
+  };
+ });
+ $('chats').querySelectorAll('[data-del]').forEach(b=>{
+  b.onclick=e=>{
+   e.stopPropagation();
+   const id=b.dataset.del;
+   if(!confirm('Удалить этот чат?'))return;
+   delete S.chats[id];S.order=S.order.filter(x=>x!==id);
+   if(!S.order.length){const nid=uid();S.chats[nid]={title:'Новый чат',hist:[]};S.order=[nid]}
+   if(S.current===id)S.current=S.order[0];
+   save();renderChats();render();
+  };
+ });
+}
+$('newchat').onclick=()=>{
+ const id=uid();S.chats[id]={title:'Новый чат',hist:[]};S.order.unshift(id);S.current=id;
+ save();renderChats();render();clearAttachments();document.body.classList.remove('open');
+ $('in').focus();
+};
+
+// ---- attachments ----
+let attachments=[]; // {name,type,data,isImage,isPdf,isText,truncated}
+const MAX_TEXT=20000, MAX_TOTAL_BYTES=4500000;
+function fileIcon(f){if(f.isImage)return null;if(f.isPdf)return'📄';if(f.isText)return'📝';return'📎'}
+function renderAttachPreview(){
+ const box=$('attachPreview');
+ if(!attachments.length){box.innerHTML='';return}
+ box.innerHTML=attachments.map((f,i)=>`<div class="ap">${f.isImage?`<img src="data:${f.type};base64,${f.data}">`:`<div class="fi">${fileIcon(f)}</div>`}<b>${esc(f.name)}</b><button data-i="${i}">×</button></div>`).join('');
+ box.querySelectorAll('button').forEach(b=>b.onclick=()=>{attachments.splice(+b.dataset.i,1);renderAttachPreview()});
+}
+function clearAttachments(){attachments=[];renderAttachPreview()}
+function currentBase64Size(){return attachments.reduce((s,f)=>s+(f.data?f.data.length:0),0)}
+function readOneFile(file){
+ return new Promise((resolve,reject)=>{
+  const isImage=/^image\//.test(file.type);
+  const isPdf=file.type==='application/pdf'||/\.pdf$/i.test(file.name);
+  const isText=!isImage&&!isPdf;
+  const r=new FileReader();
+  r.onerror=()=>reject(new Error('Не удалось прочитать файл «'+file.name+'»'));
+  if(isText){
+   r.onload=()=>{
+    let t=String(r.result);let truncated=false;
+    if(t.length>MAX_TEXT){t=t.slice(0,MAX_TEXT);truncated=true}
+    resolve({name:file.name,type:file.type||'text/plain',isImage:false,isPdf:false,isText:true,data:t,truncated});
+   };
+   r.readAsText(file);
+  }else{
+   r.onload=()=>{
+    const b64=String(r.result).split(',')[1]||'';
+    resolve({name:file.name,type:file.type||(isPdf?'application/pdf':'application/octet-stream'),isImage,isPdf,isText:false,data:b64});
+   };
+   r.readAsDataURL(file);
+  }
+ });
+}
+$('clip').onclick=()=>$('fileInput').click();
+$('fileInput').onchange=async e=>{
+ const files=Array.from(e.target.files||[]);
+ e.target.value='';
+ for(const file of files){
+  try{
+   const f=await readOneFile(file);
+   const addSize=f.data?f.data.length:0;
+   if(currentBase64Size()+addSize>MAX_TOTAL_BYTES){alert('«'+file.name+'» не прикреплён — вместе с остальными файлами получится слишком много для хранения в браузере. Прикрепите файлы поменьше или по одному.');continue}
+   attachments.push(f);
+  }catch(err){alert(err.message)}
+ }
+ renderAttachPreview();
+};
+
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function md(s){
+ return esc(s).replace(/```\w*\n?([\s\S]*?)```/g,'<pre><code>$1</code></pre>')
+  .replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g,'<b>$1</b>');
+}
+function chipsHtml(files){
+ if(!files||!files.length)return'';
+ return '<div class="chips">'+files.map(f=>`<div class="chip">${f.isImage?`<img src="data:${f.type};base64,${f.data}">`:`<div class="fi">${fileIcon(f)}</div>`}<b>${esc(f.name)}</b></div>`).join('')+'</div>';
+}
+function add(cls,html){const d=document.createElement('div');d.className='msg '+cls;d.innerHTML=html;$('msgs').appendChild(d);scroll();return d}
+function scroll(){const l=$('log');l.scrollTop=l.scrollHeight}
+function render(){
+ const box=$('msgs');box.innerHTML='';
+ const hist=curChat().hist;
+ if(!hist.length){
+  box.innerHTML='<div class="empty"><h2>О чём поговорим?</h2><p>Выберите сервис слева и вставьте API-ключ.</p><p>Бесплатные варианты: OpenRouter, Groq и Google Gemini. Можно прикреплять файлы и фото скрепкой внизу.</p></div>';
+  return;
+ }
+ hist.forEach(m=>add(m.role==='user'?'user':'ai',(m.role==='user'?chipsHtml(m.files):'')+(m.role==='user'?esc(m.content):md(m.content))));
+}
+
+function why(st,j){
+ const o=Array.isArray(j)?j[0]:j,e=o&&o.error;
+ const m=(e&&(e.message||(typeof e==='string'?e:'')))||(o&&o.message)||'';
+ const h={400:'Проверьте ключ и название модели.',401:'Ключ не подходит.',403:'Ключ не подходит или нет доступа к этой модели.',404:'Такой модели нет. Нажмите «Показать доступные модели» и выберите из списка.',429:'Превышен лимит запросов. Подождите минуту или выберите другую модель.',503:'Модель перегружена. Попробуйте ещё раз или выберите другую модель.'}[st]||'';
+ return 'Ошибка '+st+'. '+h+(m?'\n\n'+m:'');
+}
+$('mload').onclick=async()=>{
+ const p=PROV[S.provider],key=S.keys[S.provider]||'',hint=$('mhint'),pick=$('mpick');
+ const base=(S.provider==='custom'?S.customUrl:p.url).replace(/\/(chat\/completions|messages)$/,'');
+ const h={};
+ if(S.provider==='anthropic'){h['x-api-key']=key;h['anthropic-version']='2023-06-01';h['anthropic-dangerous-direct-browser-access']='true'}
+ else if(key)h.Authorization='Bearer '+key;
+ hint.textContent='Загружаю список…';pick.hidden=true;
+ try{
+  const r=await fetch(base+'/models',{headers:h}),j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(why(r.status,j));
+  let ids=(j.data||j.models||[]).map(m=>(m.id||m.name||'').replace(/^models\//,'')).filter(Boolean);
+  if(S.provider==='gemini')ids=ids.filter(x=>/^gemini/.test(x)&&!/embedding|tts|image|live|audio/.test(x));
+  if(S.provider==='openrouter')ids.sort((a,b)=>b.endsWith(':free')-a.endsWith(':free'));
+  if(!ids.length)throw new Error('Список пуст.');
+  pick.innerHTML='<option value="">Выберите модель ('+ids.length+')</option>'+ids.map(x=>'<option>'+esc(x)+'</option>').join('');
+  pick.hidden=false;hint.textContent=S.provider==='openrouter'?'Бесплатные модели в начале списка.':'';
+ }catch(e){hint.textContent=e.message==='Failed to fetch'?'Не удалось подключиться. Проверьте ключ и интернет.':e.message}
+};
+$('mpick').onchange=e=>{if(!e.target.value)return;$('model').value=e.target.value;S.models[S.provider]=e.target.value;save()};
+
+// build the provider-specific message content (string or content-blocks array)
+function buildContent(m,provider){
+ if(!m.files||!m.files.length)return m.content;
+ const isAnthropic=provider==='anthropic';
+ const blocks=[];
+ if(m.content)blocks.push({type:'text',text:m.content});
+ m.files.forEach(f=>{
+  if(f.isImage){
+   blocks.push(isAnthropic?{type:'image',source:{type:'base64',media_type:f.type,data:f.data}}:{type:'image_url',image_url:{url:'data:'+f.type+';base64,'+f.data}});
+  }else if(f.isPdf){
+   if(isAnthropic)blocks.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:f.data}});
+   else blocks.push({type:'text',text:'[Файл «'+f.name+'» (PDF) прикреплён, но этот сервис не умеет читать PDF в чате — попробуйте Anthropic/Claude]'});
+  }else if(f.isText){
+   blocks.push({type:'text',text:'Файл «'+f.name+'»'+(f.truncated?' (обрезан, слишком длинный)':'')+':\n'+f.data});
+  }else{
+   blocks.push({type:'text',text:'[Файл «'+f.name+'» прикреплён, но этот формат не поддерживается]'});
+  }
+ });
+ return blocks;
+}
+
+async function askOnce(provider){
+ const p=PROV[provider],key=S.keys[provider]||'',model=S.models[provider]||p.m;
+ const url=provider==='custom'?S.customUrl:p.url;
+ if(!key&&provider!=='custom')throw new Error('NOKEY');
+ const hist=curChat().hist;
+ let headers={'Content-Type':'application/json'},body;
+ if(provider==='anthropic'){
+  const msgs=hist.map(m=>({role:m.role,content:buildContent(m,provider)}));
+  headers['x-api-key']=key;headers['anthropic-version']='2023-06-01';headers['anthropic-dangerous-direct-browser-access']='true';
+  body={model,max_tokens:2048,temperature:Math.min(S.temp,1),messages:msgs};
+  if(S.sys)body.system=S.sys;
+ }else{
+  const msgs=hist.map(m=>({role:m.role,content:buildContent(m,provider)}));
+  if(key)headers.Authorization='Bearer '+key;
+  body={model,temperature:S.temp,messages:S.sys?[{role:'system',content:S.sys},...msgs]:msgs};
+ }
+ let r,j;
+ for(let i=0;i<3;i++){
+  r=await fetch(url,{method:'POST',headers,body:JSON.stringify(body)});
+  j=await r.json().catch(()=>({}));
+  if(r.ok||![500,503].includes(r.status))break;
+  await new Promise(f=>setTimeout(f,1500*(i+1)));
+ }
+ if(!r.ok){
+  const err=new Error(why(r.status,j));
+  err.status=r.status;
+  throw err;
+ }
+ const t=provider==='anthropic'?(j.content||[]).map(c=>c.text||'').join(''):(j.choices&&j.choices[0].message.content);
+ if(!t)throw new Error('Пустой ответ от модели.');
+ return t;
+}
+function buildChain(){
+ if(!S.fallback)return[S.provider];
+ const chain=[S.provider];
+ FALLBACK_ORDER.forEach(k=>{if(k!==S.provider&&S.keys[k])chain.push(k)});
+ return chain;
+}
+async function ask(onSwitch){
+ const chain=buildChain();
+ let lastErr;
+ for(let i=0;i<chain.length;i++){
+  const provider=chain[i];
+  try{
+   const text=await askOnce(provider);
+   if(provider!==S.provider){S.provider=provider;save();fill()}
+   return text;
+  }catch(e){
+   lastErr=e;
+   const recoverable=e.status===429||e.status===403||e.status===503||e.message==='NOKEY';
+   if(!recoverable||i===chain.length-1)throw e.message==='NOKEY'?new Error('Вставьте API-ключ в настройках.'):e;
+   if(onSwitch)onSwitch(PROV[provider].n,PROV[chain[i+1]].n);
+  }
+ }
+ throw lastErr||new Error('Не удалось получить ответ ни от одной модели.');
+}
+
+$('f').onsubmit=async e=>{
+ e.preventDefault();
+ const t=$('in').value.trim();
+ if((!t&&!attachments.length)||$('go').disabled)return;
+ $('in').value='';fit();
+ const files=attachments;clearAttachments();
+ const hist=curChat().hist;
+ hist.push({role:'user',content:t,files});
+ if(curChat().title==='Новый чат'&&t)curChat().title=t.slice(0,40);
+ if(!save())alert('Не удалось сохранить вложения — возможно, браузер переполнен. Сообщение всё равно будет отправлено.');
+ render();renderChats();
+ const w=add('ai','<span class="dots"><span></span><span></span><span></span></span>');
+ $('go').disabled=true;
+ try{
+  const a=await ask((from,to)=>{w.innerHTML='<span class="switching">Лимит у «'+from+'», пробую «'+to+'»…</span>';});
+  hist.push({role:'assistant',content:a});save();render();
+ }catch(err){
+  w.className='msg ai err';
+  w.textContent=(err.message==='Failed to fetch'?'Не удалось подключиться. Проверьте ключ, адрес и интернет.':err.message);
+  hist.pop();save();
+ }
+ $('go').disabled=false;$('in').focus();
+};
+const fit=()=>{const i=$('in');i.style.height='auto';i.style.height=Math.min(i.scrollHeight,180)+'px'};
+$('in').oninput=fit;
+$('in').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();$('f').requestSubmit()}};
+
+fill();renderChats();render();
+</script>
+</body>
+</html>
